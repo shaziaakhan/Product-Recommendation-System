@@ -2,8 +2,18 @@ import streamlit as st
 import pandas as pd
 from snowflake.snowpark.context import get_active_session
 
-# Get the active Snowpark session
-session = get_active_session()
+# Snowflake credentials (from secrets.toml or environment variables)
+sf_options = {
+    "account": st.secrets["snowflake"]["account"],
+    "user": st.secrets["snowflake"]["user"],
+    "password": st.secrets["snowflake"]["password"],
+    "warehouse": st.secrets["snowflake"]["warehouse"],
+    "database": st.secrets["snowflake"]["database"],
+    "schema": st.secrets["snowflake"]["schema"],
+}
+
+# Initialize the Snowflake session
+session = Session.builder.configs(sf_options).create()
 
 # Fetch book details from Snowflake
 def fetch_book_details(isbn):

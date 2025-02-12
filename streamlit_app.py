@@ -17,17 +17,18 @@ sf_options = {
 session = Session.builder.configs(sf_options).create()
 
 # Fetch book details from Snowflake
-def fetch_book_details(isbn):
+# Fetch book details from Snowflake based on the book title
+def fetch_book_details(book_title):
     query = f"""
     SELECT ISBN, BOOK_TITLE, BOOK_AUTHOR, YEAR_OF_PUBLICATION, PUBLISHER, 
            IMAGE_URL_S, IMAGE_URL_M, IMAGE_URL_L, BOOK_RATING
     FROM TEST_DB.PUBLIC.BOOKS
-    WHERE ISBN = '{isbn}'
+    WHERE BOOK_TITLE ILIKE '{book_title}'
     """
     df = session.sql(query).to_pandas()
     return df
 
-# Optimized Recommendation Query (No Popular Book Fallback)
+# Optimized Recommendation Query (No Popular Book Fallback) based on ISBN
 def fetch_recommendations(isbn):
     query = f"""
     WITH UserInteractions AS (
@@ -77,12 +78,13 @@ def fetch_recommendations(isbn):
 def main():
     st.set_page_config(page_title="Book Recommendation System", layout="wide")
     st.title("📚 Book Recommendation System")
-    st.write("Enter a Book ISBN to get details and top 5 personalized book recommendations!")
+    st.write("Enter a Book Title to get details and top 5 personalized book recommendations!")
 
-    isbn = st.text_input("Enter Book ISBN:", max_chars=13)
+    book_title = st.text_input("Enter Book Title:")
 
     if st.button("🔍 Get Recommendations"):
-        book_df = fetch_book_details(isbn)
+        # Fetch book details based on the entered book title
+        book_df = fetch_book_details(book_title)
 
         if not book_df.empty:
             book = book_df.iloc[0]
@@ -98,7 +100,8 @@ def main():
 
             st.divider()
 
-            recommendations_df = fetch_recommendations(isbn)
+            # Use the ISBN from the fetched book details to get recommendations
+            recommendations_df = fetch_recommendations(book["ISBN"])
             if not recommendations_df.empty:
                 st.subheader("🔝 Top 5 Recommended Books")
 
@@ -113,7 +116,7 @@ def main():
             else:
                 st.warning("⚠️ No personalized recommendations found. Try another book.")
         else:
-            st.error("❌ Book not found. Please enter a valid ISBN.")
+            st.error("❌ Book not found. Please enter a valid book title.")
 
 if __name__ == "__main__":
     main()
